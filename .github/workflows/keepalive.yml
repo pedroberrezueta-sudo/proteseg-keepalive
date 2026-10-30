@@ -1,0 +1,25 @@
+name: keepalive
+on:
+  schedule:
+    - cron: '23 14 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ping Supabase para mantenerla activa
+        run: |
+          curl -s -o /dev/null -w "REST %{http_code}\n" \
+            "https://tlznmkcdgxqrqkgxvwdz.supabase.co/rest/v1/visitas?select=id&limit=1" \
+            -H "apikey: sb_publishable_29ZRPFZBZQwpfApPEeP1OA_g4U09wS5"
+      - name: Heartbeat para que GitHub no desactive el cron
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > heartbeat.txt
+          git config user.name "keepalive-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add heartbeat.txt
+          git commit -m "heartbeat" || echo "sin cambios"
+          git push || echo "push omitido"
